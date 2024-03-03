@@ -24,32 +24,32 @@ export async function compile(
     // ###
     // When `main` is set: compile the referenced file(s) instead.
     const mainFilePaths: string[] = resolveMainFilePaths(options.main, lessPath, lessFile);
-    if (mainFilePaths && mainFilePaths.length > 0) {
+    if (mainFilePaths.length > 0) {
       for (const filePath of mainFilePaths) {
-        if (filePath === lessFile) {
-          continue;
-        }
         const mainPath: path.ParsedPath = path.parse(filePath);
         const mainRootFileInfo = Configuration.getRootFileInfo(mainPath);
-        const mainDefaults = { ...defaults, rootFileInfo: mainRootFileInfo };
         const mainContent = await fs.readFile(filePath, { encoding: 'utf-8' });
-        await compile(filePath, mainContent, mainDefaults);
+        const mainOptions = FileOptionsParser.parse(mainContent, { ...defaults, rootFileInfo: mainRootFileInfo });
+        await compileCSS(filePath, mainOptions, mainContent, preprocessors);
       }
     }
-    
-    // Return if file not in options
-    if (mainFilePaths && mainFilePaths.indexOf(lessFile) === -1) {
-      return;
-    }
+  } else {
+    await compileCSS(lessFile, options, content, preprocessors);
   }
+}
 
+async function compileCSS(
+  lessFile: string,
+  options:Configuration.EasyLessOptions,
+  content:string,
+  preprocessors: Configuration.Preprocessor[]) {
   // No output.
   if (options.out === null || options.out === false) {
     return;
   }
 
   // Option `out`
-  const cssFilepath = chooseOutputFilename(options, lessFile, lessPath);
+  const cssFilepath = chooseOutputFilename(options, lessFile, path.dirname(lessFile));
   delete options.out;
 
   // Option `sourceMap`.
