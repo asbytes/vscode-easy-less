@@ -153,22 +153,26 @@ function cleanBrowsersList(autoprefixOption: string | string[]): string[] {
   return browsers.map(browser => browser.trim());
 }
 
-function intepolatePath(path: string, lessFilePath: string): string {
-  if (path.includes('${workspaceFolder}')) {
+function intepolatePath(filePath: string, lessFilePath: string): string {
+  if (filePath.includes('${workspaceFolder}')) {
     const lessFileUri = vscode.Uri.file(lessFilePath);
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(lessFileUri);
     if (workspaceFolder) {
-      path = path.replace(/\$\{workspaceFolder\}/g, workspaceFolder.uri.fsPath);
+      filePath = filePath.replace(/\$\{workspaceFolder\}/g, workspaceFolder.uri.fsPath);
     }
   }
 
-  if (path.includes('${workspaceRoot}')) {
+  if (filePath.includes('${workspaceRoot}')) {
     if (vscode.workspace.rootPath) {
-      path = path.replace(/\$\{workspaceRoot\}/g, vscode.workspace.rootPath);
+      filePath = filePath.replace(/\$\{workspaceRoot\}/g, vscode.workspace.rootPath);
     }
   }
 
-  return path;
+  if (filePath.includes('${fileBasename}')) {
+    filePath = filePath.replace(/\$\{fileBasename\}/g, path.basename(vscode.window.activeTextEditor!.document.fileName));
+  }
+
+  return filePath;
 }
 
 function resolveMainFilePaths(
