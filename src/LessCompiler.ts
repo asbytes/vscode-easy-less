@@ -26,12 +26,19 @@ export async function compile(
     const mainFilePaths: string[] = resolveMainFilePaths(options.main, lessPath, lessFile);
     if (mainFilePaths && mainFilePaths.length > 0) {
       for (const filePath of mainFilePaths) {
+        if (filePath === lessFile) {
+          continue;
+        }
         const mainPath: path.ParsedPath = path.parse(filePath);
         const mainRootFileInfo = Configuration.getRootFileInfo(mainPath);
         const mainDefaults = { ...defaults, rootFileInfo: mainRootFileInfo };
         const mainContent = await fs.readFile(filePath, { encoding: 'utf-8' });
         await compile(filePath, mainContent, mainDefaults);
       }
+    }
+    
+    // Return if file not in options
+    if (mainFilePaths && mainFilePaths.indexOf(lessFile) === -1) {
       return;
     }
   }
@@ -181,10 +188,6 @@ function resolveMainFilePaths(
 
   const interpolatedMainFilePaths: string[] = mainFiles.map(mainFile => intepolatePath(mainFile, lessPath));
   const resolvedMainFilePaths: string[] = interpolatedMainFilePaths.map(mainFile => path.resolve(lessPath, mainFile));
-  if (resolvedMainFilePaths.indexOf(currentLessFile) >= 0) {
-    // ###
-    return []; // avoid infinite loops
-  }
 
   return resolvedMainFilePaths;
 }
